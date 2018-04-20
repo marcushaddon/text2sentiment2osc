@@ -1,12 +1,20 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from textblob import TextBlob
+from pythonosc import udp_client
+
 app = Flask(__name__)
 CORS(app)
 
+def send_osc(endpoint, msg='ping'):
+    client = udp_client.SimpleUDPClient('127.0.0.1', 12345)
+    client.send_message(endpoint, msg)
+
 @app.route('/')
 def hello():
-    return "HELLO MY DUDES";
+    return "HELLO MY DUDES"
+
+
 
 @app.route("/sentiment", methods=['POST'])
 def sentiment():
@@ -18,13 +26,27 @@ def sentiment():
     
     text = body['text']
     blob = TextBlob(text)
-    response = [
-        {
-            'text': str(sentence),
-            'sentiment': sentence.sentiment.polarity
-        } for sentence in blob.sentences
-    ]
+    sentiment = blob.sentiment.polarity
+
+    # Notify the osc-server
+    send_osc('/Sentiment', sentiment)
+
+    response =  {
+            'text': text,
+            'sentiment': sentiment
+        }
+
 
     response = jsonify(response)
 
     return response
+
+@app.route('/Recording/start', methods=['POST'])
+def start():
+    send_osc('/Recording/start')
+    return ('', 204)
+
+@app.route('/Recording/end', methods=['POST'])
+def end():
+    send_osc('/Recording/end')
+    return ('', 204)
