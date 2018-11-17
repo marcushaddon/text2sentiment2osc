@@ -8,7 +8,10 @@ CORS(app)
 
 def send_osc(endpoint, msg='ping'):
     client = udp_client.SimpleUDPClient('127.0.0.1', 12345)
-    client.send_message(endpoint, msg)
+    try:
+        client.send_message(endpoint, msg)
+    except:
+        print "There was an error contacting the OSC server, is it up and running on " + "127.0.0.1:12345"
 
 @app.route('/')
 def hello():
